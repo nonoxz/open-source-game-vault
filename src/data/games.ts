@@ -57,7 +57,7 @@ export const games: GameEntry[] = [
     runtimeStatus: 'ready',
     engineLicense: 'GPL-3.0',
     sourceUrl: 'https://github.com/SimHacker/micropolis',
-    runnerPath: '/runners/micropolis/index.html',
+    runnerPath: 'runners/micropolis/index.html',
     summary:
       'The cleanest legal fit: the SimCity-derived code was released as Micropolis under GPL.',
     legalBoundary:

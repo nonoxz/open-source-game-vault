@@ -77,7 +77,7 @@ For developers who want to connect a real WebAssembly/source-port engine:
 
 1. Compile or provide a browser-safe build for the engine.
 2. Place it under `public/runners/<game-id>/index.html`.
-3. Add `runnerPath: '/runners/<game-id>/index.html'` in `src/data/games.ts`.
+3. Add `runnerPath: 'runners/<game-id>/index.html'` in `src/data/games.ts`.
 4. Keep commercial game data out of the repository.
 5. Load user-provided data from browser storage, drag-and-drop, or a file picker.
 
