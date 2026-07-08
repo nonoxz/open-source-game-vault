@@ -58,6 +58,20 @@
         color: #aaa08d;
       }
 
+      a {
+        color: #6dd7c8;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      a:hover {
+        color: #8ff1e5;
+      }
+
+      .byline {
+        margin-top: 4px;
+      }
+
       .controls,
       .metrics {
         display: flex;
@@ -110,6 +124,9 @@
         <div>
           <h1>Micropolis Planning Sandbox</h1>
           <p>Click para zonificar. Es un runner local de prueba, no el motor oficial completo.</p>
+          <p class="byline">
+            By <a href="https://github.com/nonoxz" target="_blank" rel="noreferrer">nonoxz</a>
+          </p>
         </div>
         <div class="controls" aria-label="Herramientas de zona">
           <button class="active" data-zone="residential" type="button">Residencial</button>

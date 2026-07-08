@@ -64,6 +64,32 @@
   line-height: 1.15;
 }
 
+.creator-link,
+.topbar-credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #6dd7c8;
+  text-decoration: none;
+}
+
+.creator-link {
+  width: 100%;
+  min-height: 38px;
+  margin-bottom: 16px;
+  padding: 0 10px;
+  border: 1px solid rgba(109, 215, 200, 0.22);
+  border-radius: 8px;
+  background: rgba(109, 215, 200, 0.06);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.creator-link:hover,
+.topbar-credit:hover {
+  color: #8ff1e5;
+}
+
 .brand p,
 .catalog-summary,
 .game-row small,
@@ -196,6 +222,12 @@
 .topbar h2 {
   font-size: 25px;
   line-height: 1.1;
+}
+
+.topbar-credit {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .topbar-actions {

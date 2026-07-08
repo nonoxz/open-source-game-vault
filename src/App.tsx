@@ -97,6 +97,11 @@ function App() {
           </div>
         </div>
 
+        <a className="creator-link" href="https://github.com/nonoxz" target="_blank" rel="noreferrer">
+          <ExternalLink size={16} aria-hidden="true" />
+          By nonoxz
+        </a>
+
         <div className="catalog-summary">
           <span>{games.length} juegos</span>
           <span>{formatBytes(totalStored)} locales</span>
@@ -130,6 +135,9 @@ function App() {
           <div>
             <p className="section-label">Launcher</p>
             <h2>{activeGame.title}</h2>
+            <a className="topbar-credit" href="https://github.com/nonoxz" target="_blank" rel="noreferrer">
+              By nonoxz
+            </a>
           </div>
           <div className="topbar-actions">
             <a className="icon-link" href={activeGame.sourceUrl} target="_blank" rel="noreferrer">
@@ -203,7 +211,7 @@ function Runner({
           key={`${game.id}-${launchTick}`}
           title={`${game.title} runner`}
           src={game.runnerPath}
-          sandbox="allow-scripts"
+          sandbox="allow-scripts allow-popups"
         />
       </div>
     )
