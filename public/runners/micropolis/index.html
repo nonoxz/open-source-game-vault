@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Micropolis Planning Sandbox</title>
+    <style>
+      :root {
+        color: #efe7d7;
+        background: #101212;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #101212;
+      }
+
+      .sim {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: 100vh;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px;
+        border-bottom: 1px solid rgba(239, 231, 215, 0.12);
+        background: #171a19;
+      }
+
+      h1,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 15px;
+      }
+
+      p,
+      button,
+      .metric {
+        font-size: 12px;
+      }
+
+      p {
+        color: #aaa08d;
+      }
+
+      .controls,
+      .metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+
+      button {
+        min-height: 30px;
+        padding: 0 10px;
+        color: #efe7d7;
+        border: 1px solid rgba(239, 231, 215, 0.16);
+        border-radius: 7px;
+        background: #222625;
+        cursor: pointer;
+      }
+
+      button.active {
+        color: #111313;
+        background: #e2b15f;
+        border-color: #e2b15f;
+        font-weight: 700;
+      }
+
+      .metric {
+        padding: 5px 8px;
+        border: 1px solid rgba(239, 231, 215, 0.12);
+        border-radius: 7px;
+        background: rgba(239, 231, 215, 0.05);
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        cursor: crosshair;
+      }
+
+      @media (max-width: 720px) {
+        header {
+          display: grid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="sim">
+      <header>
+        <div>
+          <h1>Micropolis Planning Sandbox</h1>
+          <p>Click para zonificar. Es un runner local de prueba, no el motor oficial completo.</p>
+        </div>
+        <div class="controls" aria-label="Herramientas de zona">
+          <button class="active" data-zone="residential" type="button">Residencial</button>
+          <button data-zone="commercial" type="button">Comercial</button>
+          <button data-zone="industrial" type="button">Industrial</button>
+          <button data-zone="road" type="button">Calle</button>
+          <button data-zone="park" type="button">Parque</button>
+        </div>
+        <div class="metrics" aria-live="polite">
+          <span class="metric" id="budget">$5000</span>
+          <span class="metric" id="population">0 hab.</span>
+          <span class="metric" id="happiness">50% alegria</span>
+        </div>
+      </header>
+      <canvas id="city" width="960" height="540"></canvas>
+    </main>
+
+    <script>
+      const canvas = document.querySelector("#city")
+      const ctx = canvas.getContext("2d")
+      const budgetEl = document.querySelector("#budget")
+      const populationEl = document.querySelector("#population")
+      const happinessEl = document.querySelector("#happiness")
+      const buttons = [...document.querySelectorAll("button[data-zone]")]
+
+      const columns = 32
+      const rows = 18
+      const zones = {
+        empty: { color: "#18201d", cost: 0 },
+        residential: { color: "#6dd7c8", cost: 100 },
+        commercial: { color: "#e2b15f", cost: 130 },
+        industrial: { color: "#b7acd7", cost: 160 },
+        road: { color: "#777064", cost: 60 },
+        park: { color: "#6da85f", cost: 90 },
+      }
+
+      let selectedZone = "residential"
+      let budget = 5000
+      const grid = Array.from({ length: rows }, () => Array(columns).fill("empty"))
+
+      function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect()
+        const scale = window.devicePixelRatio || 1
+        canvas.width = Math.max(1, Math.floor(rect.width * scale))
+        canvas.height = Math.max(1, Math.floor(rect.height * scale))
+        ctx.setTransform(scale, 0, 0, scale, 0, 0)
+        draw()
+      }
+
+      function metrics() {
+        const counts = Object.fromEntries(Object.keys(zones).map((zone) => [zone, 0]))
+        for (const row of grid) {
+          for (const cell of row) counts[cell] += 1
+        }
+
+        const population = counts.residential * 28 + counts.commercial * 9
+        const balance =
+          50 +
+          counts.park * 2 +
+          Math.min(counts.commercial * 0.7, 18) -
+          Math.max(counts.industrial - counts.road, 0) * 1.4
+        const happiness = Math.max(5, Math.min(99, Math.round(balance)))
+
+        budgetEl.textContent = `$${budget}`
+        populationEl.textContent = `${population} hab.`
+        happinessEl.textContent = `${happiness}% alegria`
+      }
+
+      function draw() {
+        const width = canvas.clientWidth
+        const height = canvas.clientHeight
+        const tile = Math.min(width / columns, height / rows)
+        const offsetX = (width - columns * tile) / 2
+        const offsetY = (height - rows * tile) / 2
+
+        ctx.clearRect(0, 0, width, height)
+        ctx.fillStyle = "#101212"
+        ctx.fillRect(0, 0, width, height)
+
+        for (let y = 0; y < rows; y += 1) {
+          for (let x = 0; x < columns; x += 1) {
+            const zone = zones[grid[y][x]]
+            ctx.fillStyle = zone.color
+            ctx.globalAlpha = grid[y][x] === "empty" ? 0.5 : 0.95
+            ctx.fillRect(offsetX + x * tile + 1, offsetY + y * tile + 1, tile - 2, tile - 2)
+          }
+        }
+
+        ctx.globalAlpha = 1
+        ctx.strokeStyle = "rgba(239, 231, 215, 0.18)"
+        ctx.strokeRect(offsetX, offsetY, columns * tile, rows * tile)
+        metrics()
+      }
+
+      buttons.forEach((button) => {
+        button.addEventListener("click", () => {
+          selectedZone = button.dataset.zone
+          buttons.forEach((item) => item.classList.toggle("active", item === button))
+        })
+      })
+
+      canvas.addEventListener("click", (event) => {
+        const rect = canvas.getBoundingClientRect()
+        const tile = Math.min(rect.width / columns, rect.height / rows)
+        const offsetX = (rect.width - columns * tile) / 2
+        const offsetY = (rect.height - rows * tile) / 2
+        const x = Math.floor((event.clientX - rect.left - offsetX) / tile)
+        const y = Math.floor((event.clientY - rect.top - offsetY) / tile)
+
+        if (x < 0 || y < 0 || x >= columns || y >= rows) return
+        const target = grid[y][x] === selectedZone ? "empty" : selectedZone
+        const cost = target === "empty" ? 0 : zones[target].cost
+        if (cost > budget) return
+        budget -= cost
+        grid[y][x] = target
+        draw()
+      })
+
+      window.addEventListener("resize", resizeCanvas)
+      resizeCanvas()
+    </script>
+  </body>
+</html>
