@@ -391,13 +391,17 @@
   position: relative;
   display: grid;
   place-items: center;
-  max-width: 430px;
+  max-width: 560px;
   padding: 26px;
   text-align: center;
 }
 
 .runner-message h3 {
   margin: 12px 0 8px;
+}
+
+.setup-message {
+  align-content: center;
 }
 
 .runner-message code {
@@ -409,26 +413,113 @@
   background: rgba(109, 215, 200, 0.08);
 }
 
-.runner-steps {
+.setup-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  width: min(100%, 430px);
-  margin-top: 14px;
+  grid-template-columns: minmax(210px, 1.3fr) minmax(130px, 0.85fr) minmax(130px, 0.85fr);
+  gap: 9px;
+  width: min(100%, 560px);
+  margin-top: 18px;
 }
 
-.runner-steps span {
-  display: grid;
-  place-items: center;
-  gap: 5px;
-  min-height: 62px;
-  padding: 8px;
+.setup-download,
+.setup-upload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 58px;
+  padding: 10px 12px;
   color: #eee7d8;
-  border: 1px solid rgba(238, 231, 216, 0.11);
+  text-decoration: none;
+  border: 1px solid rgba(238, 231, 216, 0.13);
   border-radius: 8px;
   background: rgba(238, 231, 216, 0.045);
   font-size: 12px;
   font-weight: 700;
+  cursor: pointer;
+}
+
+.setup-download {
+  justify-content: flex-start;
+  color: #111313;
+  background: #e2b15f;
+  border-color: #e2b15f;
+  text-align: left;
+}
+
+.setup-download span,
+.setup-download strong,
+.setup-download small {
+  display: block;
+  min-width: 0;
+}
+
+.setup-download small {
+  max-width: 260px;
+  overflow: hidden;
+  color: rgba(17, 19, 19, 0.72);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setup-upload:hover {
+  border-color: rgba(109, 215, 200, 0.45);
+}
+
+.setup-upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.setup-instructions {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 560px);
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: setup-step;
+  text-align: left;
+}
+
+.setup-instructions li {
+  position: relative;
+  min-height: 36px;
+  padding: 9px 10px 9px 42px;
+  color: #cfc7b6;
+  border: 1px solid rgba(238, 231, 216, 0.1);
+  border-radius: 8px;
+  background: rgba(17, 18, 18, 0.42);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.setup-instructions li::before {
+  counter-increment: setup-step;
+  content: counter(setup-step);
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  color: #111313;
+  border-radius: 50%;
+  background: #6dd7c8;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.legal-note {
+  max-width: 540px;
+  margin-top: 10px;
+  color: #8f8677;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .asset-dock {
@@ -765,7 +856,7 @@
     min-height: 340px;
   }
 
-  .runner-steps {
+  .setup-actions {
     grid-template-columns: 1fr;
   }
 }

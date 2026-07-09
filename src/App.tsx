@@ -40,6 +40,12 @@ type BridgeState = {
   message: string
 }
 
+type SetupLink = {
+  label: string
+  url: string
+  detail: string
+}
+
 const statusLabel: Record<RuntimeStatus, string> = {
   ready: 'Runner incluido',
   adapter: 'Adaptador preparado',
@@ -91,6 +97,62 @@ function hasMatchingAsset(game: GameEntry, asset: StoredAsset) {
   return game.acceptedExtensions.some((extension) =>
     asset.name.toLowerCase().endsWith(extension.toLowerCase()),
   )
+}
+
+function githubArchiveUrl(url: string) {
+  const match = url.match(/^https:\/\/github\.com\/([^/]+)\/([^/?#]+)\/?$/)
+  if (!match) return undefined
+  return `https://github.com/${match[1]}/${match[2]}/archive/HEAD.zip`
+}
+
+function setupLinkFor(game: GameEntry): SetupLink {
+  const freeData = game.downloadLinks.find((link) => link.kind === 'free-data')
+  if (freeData) {
+    return {
+      label: 'Descargar kit legal',
+      url: freeData.url,
+      detail: freeData.label,
+    }
+  }
+
+  const githubSource =
+    game.downloadLinks.find((link) => link.kind === 'source' && githubArchiveUrl(link.url)) ??
+    ({ label: 'Repositorio base', url: game.sourceUrl, kind: 'source' } satisfies DownloadLink)
+  const githubZip = githubArchiveUrl(githubSource.url)
+  if (githubZip) {
+    return {
+      label: 'Descargar repo base',
+      url: githubZip,
+      detail: githubSource.label,
+    }
+  }
+
+  const engine = game.downloadLinks.find((link) => link.kind === 'engine') ?? game.downloadLinks[0]
+  return {
+    label: 'Abrir descarga',
+    url: engine.url,
+    detail: engine.label,
+  }
+}
+
+function setupStepsFor(game: GameEntry, bridgeCanLaunch: boolean, hasAssets: boolean) {
+  if (game.runMode === 'web-included') {
+    return [
+      'Este runner ya viene incluido en el sitio.',
+      'Pulsa Jugar para reiniciar o volver a cargar la partida.',
+      'Puedes subir archivos opcionales si el runner completo los soporta mas adelante.',
+    ]
+  }
+
+  return [
+    `Descarga el kit legal o repositorio base: ${setupLinkFor(game).detail}.`,
+    hasAssets
+      ? 'Ya hay archivos compatibles guardados en el vault local del navegador.'
+      : `Sube los archivos esperados: ${game.requiredAssets.join(', ')}.`,
+    bridgeCanLaunch
+      ? 'El puente local esta configurado: pulsa Abrir local para ejecutar el motor nativo.'
+      : 'Para jugar hoy, configura tools/local-bridge/local-bridge.config.json y ejecuta npm run bridge.',
+  ]
 }
 
 function App() {
@@ -263,7 +325,7 @@ function App() {
           game={activeGame}
           assets={matchedAssets}
           bridgeCanLaunch={bridgeCanLaunch}
-          bridgeOnline={bridge.online}
+          onUpload={handleUpload}
           launchTick={launchTick}
         />
 
@@ -322,13 +384,13 @@ function Runner({
   game,
   assets,
   bridgeCanLaunch,
-  bridgeOnline,
+  onUpload,
   launchTick,
 }: {
   game: GameEntry
   assets: StoredAsset[]
   bridgeCanLaunch: boolean
-  bridgeOnline: boolean
+  onUpload: (event: ChangeEvent<HTMLInputElement>) => void
   launchTick: number
 }) {
   if (game.runnerPath) {
@@ -347,26 +409,54 @@ function Runner({
   return (
     <div className="runner-placeholder">
       <div className="runner-grid" aria-hidden="true"></div>
-      <div className="runner-message">
+      <div className="runner-message setup-message">
         <HardDrive size={34} aria-hidden="true" />
         <h3>{bridgeCanLaunch ? 'Listo para abrir localmente' : 'Preparar juego'}</h3>
         <p>{statusCopy[game.runtimeStatus]}</p>
-        <div className="runner-steps">
-          <span>
-            <Download size={15} aria-hidden="true" />
-            Descargar legal
-          </span>
-          <span>
-            <FileUp size={15} aria-hidden="true" />
-            Subir al vault
-          </span>
-          <span>
-            <PlugZap size={15} aria-hidden="true" />
-            {bridgeOnline ? 'Puente local' : 'Runner pendiente'}
-          </span>
-        </div>
+        <SetupActions game={game} onUpload={onUpload} />
+        <ol className="setup-instructions">
+          {setupStepsFor(game, bridgeCanLaunch, assets.length > 0).map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ol>
         <code>{assets.length ? `${assets.length} archivo(s) compatible(s)` : 'sin archivos locales aun'}</code>
+        <small className="legal-note">
+          El sitio solo descarga codigo, motores o datos libres; si el juego exige archivos comerciales, debes
+          aportarlos desde una copia legal.
+        </small>
       </div>
+    </div>
+  )
+}
+
+function SetupActions({
+  game,
+  onUpload,
+}: {
+  game: GameEntry
+  onUpload: (event: ChangeEvent<HTMLInputElement>) => void
+}) {
+  const setupLink = setupLinkFor(game)
+
+  return (
+    <div className="setup-actions">
+      <a className="setup-download" href={setupLink.url} target="_blank" rel="noreferrer">
+        <Download size={18} aria-hidden="true" />
+        <span>
+          <strong>{setupLink.label}</strong>
+          <small>{setupLink.detail}</small>
+        </span>
+      </a>
+      <label className="setup-upload">
+        <FileUp size={17} aria-hidden="true" />
+        Subir archivos
+        <input multiple type="file" onChange={onUpload} accept={game.acceptedExtensions.join(',')} />
+      </label>
+      <label className="setup-upload">
+        <FolderUp size={17} aria-hidden="true" />
+        Subir carpeta
+        <input multiple type="file" onChange={onUpload} {...folderInputProps} />
+      </label>
     </div>
   )
 }
