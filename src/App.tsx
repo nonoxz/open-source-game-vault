@@ -150,8 +150,10 @@ function setupStepsFor(game: GameEntry, bridgeCanLaunch: boolean, hasAssets: boo
       ? 'Ya hay archivos compatibles guardados en el vault local del navegador.'
       : `Sube los archivos esperados: ${game.requiredAssets.join(', ')}.`,
     bridgeCanLaunch
-      ? 'El puente local esta configurado: pulsa Abrir local para ejecutar el motor nativo.'
-      : 'Para jugar hoy, configura tools/local-bridge/local-bridge.config.json y ejecuta npm run bridge.',
+      ? 'El juego esta listo para abrirse con el motor local configurado.'
+      : hasAssets
+        ? 'Pulsa Jugar. Si el runner web aun no esta conectado, el sitio te avisara sin perder tus archivos.'
+        : 'Cuando el archivo aparezca guardado, se activara el boton Jugar.',
   ]
 }
 
@@ -171,7 +173,8 @@ function App() {
   const matchedAssets = activeAssets.filter((asset) => hasMatchingAsset(activeGame, asset))
   const totalStored = assets.reduce((sum, asset) => sum + asset.size, 0)
   const bridgeCanLaunch = bridge.online && bridge.configuredGames.includes(activeGame.id)
-  const launchLabel = activeGame.runnerPath ? 'Jugar' : bridgeCanLaunch ? 'Abrir local' : 'Preparar'
+  const launchLabel =
+    activeGame.runnerPath || matchedAssets.length > 0 ? 'Jugar' : bridgeCanLaunch ? 'Abrir local' : 'Preparar'
 
   useEffect(() => {
     listAssets()
@@ -230,9 +233,13 @@ function App() {
     }
 
     if (!bridge.online) {
-      setNotice(
-        `${activeGame.title} aun no tiene runner web. Puedes subir/guardar archivos aqui, o activar el puente local con npm run bridge.`,
-      )
+      if (matchedAssets.length > 0) {
+        setNotice(
+          `${activeGame.title} tiene archivos guardados. Falta conectar el motor web para que Jugar lo arranque dentro del navegador.`,
+        )
+      } else {
+        setNotice(`Primero sube los archivos de ${activeGame.title}. Despues aparecera el flujo de juego.`)
+      }
       return
     }
 
@@ -325,6 +332,7 @@ function App() {
           game={activeGame}
           assets={matchedAssets}
           bridgeCanLaunch={bridgeCanLaunch}
+          onLaunch={handleLaunch}
           onUpload={handleUpload}
           launchTick={launchTick}
         />
@@ -384,12 +392,14 @@ function Runner({
   game,
   assets,
   bridgeCanLaunch,
+  onLaunch,
   onUpload,
   launchTick,
 }: {
   game: GameEntry
   assets: StoredAsset[]
   bridgeCanLaunch: boolean
+  onLaunch: () => void
   onUpload: (event: ChangeEvent<HTMLInputElement>) => void
   launchTick: number
 }) {
@@ -413,7 +423,12 @@ function Runner({
         <HardDrive size={34} aria-hidden="true" />
         <h3>{bridgeCanLaunch ? 'Listo para abrir localmente' : 'Preparar juego'}</h3>
         <p>{statusCopy[game.runtimeStatus]}</p>
-        <SetupActions game={game} onUpload={onUpload} />
+        <SetupActions
+          game={game}
+          hasAssets={assets.length > 0}
+          onLaunch={onLaunch}
+          onUpload={onUpload}
+        />
         <ol className="setup-instructions">
           {setupStepsFor(game, bridgeCanLaunch, assets.length > 0).map((step) => (
             <li key={step}>{step}</li>
@@ -431,25 +446,39 @@ function Runner({
 
 function SetupActions({
   game,
+  hasAssets,
+  onLaunch,
   onUpload,
 }: {
   game: GameEntry
+  hasAssets: boolean
+  onLaunch: () => void
   onUpload: (event: ChangeEvent<HTMLInputElement>) => void
 }) {
   const setupLink = setupLinkFor(game)
 
   return (
     <div className="setup-actions">
-      <a className="setup-download" href={setupLink.url} target="_blank" rel="noreferrer">
-        <Download size={18} aria-hidden="true" />
-        <span>
-          <strong>{setupLink.label}</strong>
-          <small>{setupLink.detail}</small>
-        </span>
-      </a>
+      {hasAssets ? (
+        <button className="setup-play" type="button" onClick={onLaunch}>
+          <Play size={18} fill="currentColor" aria-hidden="true" />
+          <span>
+            <strong>Jugar</strong>
+            <small>Usar archivos cargados</small>
+          </span>
+        </button>
+      ) : (
+        <a className="setup-download" href={setupLink.url} target="_blank" rel="noreferrer">
+          <Download size={18} aria-hidden="true" />
+          <span>
+            <strong>{setupLink.label}</strong>
+            <small>{setupLink.detail}</small>
+          </span>
+        </a>
+      )}
       <label className="setup-upload">
         <FileUp size={17} aria-hidden="true" />
-        Subir archivos
+        {hasAssets ? 'Cambiar archivo' : 'Subir archivos'}
         <input multiple type="file" onChange={onUpload} accept={game.acceptedExtensions.join(',')} />
       </label>
       <label className="setup-upload">
