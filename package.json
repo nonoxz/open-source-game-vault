@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "bridge": "node tools/local-bridge/server.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.23.0",

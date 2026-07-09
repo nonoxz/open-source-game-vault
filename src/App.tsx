@@ -5,26 +5,40 @@ import {
   Building2,
   CheckCircle2,
   Crosshair,
+  Download,
   ExternalLink,
   FileUp,
   Flame,
   FlaskConical,
+  FolderUp,
   Gamepad2,
   HardDrive,
   Landmark,
   Orbit,
   Play,
+  PlugZap,
   RadioTower,
+  RefreshCw,
   Rocket,
   ShieldCheck,
   Swords,
   Target,
+  Terminal,
   Trash2,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import './App.css'
-import { defaultGameId, games, type GameEntry, type RuntimeStatus } from './data/games'
+import { defaultGameId, games, type DownloadLink, type GameEntry, type RuntimeStatus } from './data/games'
 import { deleteAsset, formatBytes, listAssets, saveAssets, type StoredAsset } from './lib/assetStore'
+
+const BRIDGE_URL = 'http://127.0.0.1:45217'
+const folderInputProps = { webkitdirectory: '', directory: '' } as Record<string, string>
+
+type BridgeState = {
+  online: boolean
+  configuredGames: string[]
+  message: string
+}
 
 const statusLabel: Record<RuntimeStatus, string> = {
   ready: 'Runner incluido',
@@ -34,8 +48,15 @@ const statusLabel: Record<RuntimeStatus, string> = {
 
 const statusCopy: Record<RuntimeStatus, string> = {
   ready: 'Este juego tiene un runner local en el sitio.',
-  adapter: 'El sitio ya modela assets y permisos; falta enchufar el motor WASM.',
-  research: 'Conviene validar motor, assets y rendimiento antes de prometer ejecucion web.',
+  adapter: 'El sitio ya modela assets, descargas y permisos; falta enchufar el motor WASM.',
+  research: 'Usalo con el puente local mientras se valida un runner web estable.',
+}
+
+const downloadKindLabel: Record<DownloadLink['kind'], string> = {
+  engine: 'motor',
+  'free-data': 'datos libres',
+  guide: 'guia',
+  source: 'codigo',
 }
 
 const gameIcons: Record<string, LucideIcon> = {
@@ -77,17 +98,47 @@ function App() {
   const [assets, setAssets] = useState<StoredAsset[]>([])
   const [launchTick, setLaunchTick] = useState(0)
   const [notice, setNotice] = useState('Vault listo. Selecciona un juego para revisar su runner.')
+  const [bridge, setBridge] = useState<BridgeState>({
+    online: false,
+    configuredGames: [],
+    message: 'Puente local no comprobado.',
+  })
 
   const activeGame = games.find((game) => game.id === activeId) ?? games[0]
   const activeAssets = useMemo(() => byGameId(assets, activeGame.id), [assets, activeGame.id])
   const matchedAssets = activeAssets.filter((asset) => hasMatchingAsset(activeGame, asset))
   const totalStored = assets.reduce((sum, asset) => sum + asset.size, 0)
+  const bridgeCanLaunch = bridge.online && bridge.configuredGames.includes(activeGame.id)
+  const launchLabel = activeGame.runnerPath ? 'Jugar' : bridgeCanLaunch ? 'Abrir local' : 'Preparar'
 
   useEffect(() => {
     listAssets()
       .then(setAssets)
       .catch(() => setNotice('No pude leer IndexedDB. Revisa permisos del navegador.'))
   }, [])
+
+  useEffect(() => {
+    checkBridge()
+  }, [])
+
+  async function checkBridge() {
+    try {
+      const response = await fetch(`${BRIDGE_URL}/status`, { cache: 'no-store' })
+      if (!response.ok) throw new Error('Bridge offline')
+      const data = (await response.json()) as { configuredGames?: string[] }
+      setBridge({
+        online: true,
+        configuredGames: data.configuredGames ?? [],
+        message: 'Puente local conectado.',
+      })
+    } catch {
+      setBridge({
+        online: false,
+        configuredGames: [],
+        message: 'Puente local apagado. Ejecuta npm run bridge para abrir motores nativos.',
+      })
+    }
+  }
 
   async function refreshAssets(message?: string) {
     const nextAssets = await listAssets()
@@ -109,13 +160,32 @@ function App() {
     await refreshAssets('Archivo removido del vault local.')
   }
 
-  function handleLaunch() {
+  async function handleLaunch() {
     setLaunchTick((value) => value + 1)
     if (activeGame.runnerPath) {
       setNotice(`Ejecutando runner local de ${activeGame.title}.`)
       return
     }
-    setNotice(`Runner pendiente para ${activeGame.title}; assets y manifiesto quedan preparados.`)
+
+    if (!bridge.online) {
+      setNotice(
+        `${activeGame.title} aun no tiene runner web. Puedes subir/guardar archivos aqui, o activar el puente local con npm run bridge.`,
+      )
+      return
+    }
+
+    try {
+      const response = await fetch(`${BRIDGE_URL}/launch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameId: activeGame.id }),
+      })
+      const data = (await response.json()) as { message?: string }
+      if (!response.ok) throw new Error(data.message ?? 'No se pudo abrir el juego local.')
+      setNotice(data.message ?? `Abriendo ${activeGame.title} con el puente local.`)
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'No se pudo abrir el juego local.')
+    }
   }
 
   return (
@@ -180,38 +250,53 @@ function App() {
           <div className="topbar-actions">
             <a className="icon-link" href={activeGame.sourceUrl} target="_blank" rel="noreferrer">
               <ExternalLink size={17} aria-hidden="true" />
-              Fuente
+              Codigo
             </a>
             <button className="primary-action" type="button" onClick={handleLaunch}>
               <Play size={17} fill="currentColor" aria-hidden="true" />
-              Ejecutar
+              {launchLabel}
             </button>
           </div>
         </header>
 
-        <Runner game={activeGame} assets={matchedAssets} launchTick={launchTick} />
+        <Runner
+          game={activeGame}
+          assets={matchedAssets}
+          bridgeCanLaunch={bridgeCanLaunch}
+          bridgeOnline={bridge.online}
+          launchTick={launchTick}
+        />
 
         <section className="asset-dock" aria-label="Archivos locales">
           <div>
             <p className="section-label">Vault local</p>
-            <h3>Assets aportados por el usuario</h3>
+            <h3>Archivos aportados por el usuario</h3>
           </div>
-          <label className="upload-button">
-            <FileUp size={17} aria-hidden="true" />
-            Subir archivos
-            <input
-              multiple
-              type="file"
-              onChange={handleUpload}
-              accept={activeGame.acceptedExtensions.join(',')}
-            />
-          </label>
+          <div className="asset-actions">
+            <label className="upload-button">
+              <FileUp size={17} aria-hidden="true" />
+              Subir archivos
+              <input
+                multiple
+                type="file"
+                onChange={handleUpload}
+                accept={activeGame.acceptedExtensions.join(',')}
+              />
+            </label>
+            <label className="upload-button secondary-upload">
+              <FolderUp size={17} aria-hidden="true" />
+              Subir carpeta
+              <input multiple type="file" onChange={handleUpload} {...folderInputProps} />
+            </label>
+          </div>
           <AssetList assets={activeAssets} onDelete={handleDelete} />
         </section>
       </section>
 
       <aside className="detail-panel" aria-label="Detalles del juego">
         <StatusCard game={activeGame} matchedCount={matchedAssets.length} />
+        <DownloadBlock links={activeGame.downloadLinks} />
+        <BridgeBlock bridge={bridge} game={activeGame} canLaunch={bridgeCanLaunch} onRefresh={checkBridge} />
         <InfoBlock icon={<ShieldCheck size={18} />} title="Limite legal">
           {activeGame.legalBoundary}
         </InfoBlock>
@@ -236,10 +321,14 @@ function App() {
 function Runner({
   game,
   assets,
+  bridgeCanLaunch,
+  bridgeOnline,
   launchTick,
 }: {
   game: GameEntry
   assets: StoredAsset[]
+  bridgeCanLaunch: boolean
+  bridgeOnline: boolean
   launchTick: number
 }) {
   if (game.runnerPath) {
@@ -260,11 +349,91 @@ function Runner({
       <div className="runner-grid" aria-hidden="true"></div>
       <div className="runner-message">
         <HardDrive size={34} aria-hidden="true" />
-        <h3>Runner WASM pendiente</h3>
+        <h3>{bridgeCanLaunch ? 'Listo para abrir localmente' : 'Preparar juego'}</h3>
         <p>{statusCopy[game.runtimeStatus]}</p>
-        <code>{assets.length ? `${assets.length} asset(s) listos` : 'sin assets locales aun'}</code>
+        <div className="runner-steps">
+          <span>
+            <Download size={15} aria-hidden="true" />
+            Descargar legal
+          </span>
+          <span>
+            <FileUp size={15} aria-hidden="true" />
+            Subir al vault
+          </span>
+          <span>
+            <PlugZap size={15} aria-hidden="true" />
+            {bridgeOnline ? 'Puente local' : 'Runner pendiente'}
+          </span>
+        </div>
+        <code>{assets.length ? `${assets.length} archivo(s) compatible(s)` : 'sin archivos locales aun'}</code>
       </div>
     </div>
+  )
+}
+
+function DownloadBlock({ links }: { links: DownloadLink[] }) {
+  return (
+    <section className="info-block download-block">
+      <h3>
+        <Download size={18} aria-hidden="true" />
+        Descargas legales
+      </h3>
+      <div className="download-list">
+        {links.map((link) => (
+          <a href={link.url} key={link.url} target="_blank" rel="noreferrer">
+            <span>{link.label}</span>
+            <small>{downloadKindLabel[link.kind]}</small>
+          </a>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function BridgeBlock({
+  bridge,
+  game,
+  canLaunch,
+  onRefresh,
+}: {
+  bridge: BridgeState
+  game: GameEntry
+  canLaunch: boolean
+  onRefresh: () => void
+}) {
+  return (
+    <section className="info-block bridge-block">
+      <h3>
+        <PlugZap size={18} aria-hidden="true" />
+        Ejecucion local
+      </h3>
+      <div className="bridge-status">
+        <span className={bridge.online ? 'bridge-dot online' : 'bridge-dot'} aria-hidden="true" />
+        <strong>{canLaunch ? 'Configurado para este juego' : bridge.message}</strong>
+        <button type="button" onClick={onRefresh} aria-label="Revisar puente local">
+          <RefreshCw size={15} aria-hidden="true" />
+        </button>
+      </div>
+      {game.localLaunch ? (
+        <dl className="launch-hints">
+          <div>
+            <dt>Motor recomendado</dt>
+            <dd>{game.localLaunch.engine}</dd>
+          </div>
+          <div>
+            <dt>Archivo/carpeta</dt>
+            <dd>{game.localLaunch.assetHint}</dd>
+          </div>
+          <div>
+            <dt>Ejemplo comando</dt>
+            <dd>
+              <Terminal size={14} aria-hidden="true" />
+              <code>{game.localLaunch.commandHint}</code>
+            </dd>
+          </div>
+        </dl>
+      ) : null}
+    </section>
   )
 }
 

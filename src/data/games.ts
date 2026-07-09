@@ -1,4 +1,17 @@
 export type RuntimeStatus = 'ready' | 'adapter' | 'research'
+export type RunMode = 'web-included' | 'web-assets' | 'local-bridge'
+
+export type DownloadLink = {
+  label: string
+  url: string
+  kind: 'free-data' | 'engine' | 'source' | 'guide'
+}
+
+export type LocalLaunch = {
+  engine: string
+  assetHint: string
+  commandHint: string
+}
 
 export type GameEntry = {
   id: string
@@ -9,6 +22,9 @@ export type GameEntry = {
   engineLicense: string
   sourceUrl: string
   runnerPath?: string
+  runMode: RunMode
+  downloadLinks: DownloadLink[]
+  localLaunch?: LocalLaunch
   summary: string
   legalBoundary: string
   requiredAssets: string[]
@@ -25,6 +41,29 @@ export const games: GameEntry[] = [
     runtimeStatus: 'adapter',
     engineLicense: 'GPL source ports',
     sourceUrl: 'https://github.com/id-Software/DOOM',
+    runMode: 'web-assets',
+    downloadLinks: [
+      {
+        label: 'Freedoom data libre',
+        url: 'https://freedoom.github.io/download.html',
+        kind: 'free-data',
+      },
+      {
+        label: 'Chocolate Doom',
+        url: 'https://www.chocolate-doom.org/wiki/index.php/Downloads',
+        kind: 'engine',
+      },
+      {
+        label: 'Codigo original id Software',
+        url: 'https://github.com/id-Software/DOOM',
+        kind: 'source',
+      },
+    ],
+    localLaunch: {
+      engine: 'GZDoom, Chocolate Doom o Crispy Doom',
+      assetHint: 'freedoom2.wad, doom.wad o doom2.wad',
+      commandHint: 'gzdoom -iwad /ruta/a/freedoom2.wad',
+    },
     summary:
       'Best first real target. The launcher can use free Freedoom data or user-provided commercial WAD files.',
     legalBoundary:
@@ -41,6 +80,24 @@ export const games: GameEntry[] = [
     runtimeStatus: 'adapter',
     engineLicense: 'GPL engine source',
     sourceUrl: 'https://github.com/id-Software/wolf3d-browser',
+    runMode: 'local-bridge',
+    downloadLinks: [
+      {
+        label: 'Wolf3D browser source',
+        url: 'https://github.com/id-Software/wolf3d-browser',
+        kind: 'source',
+      },
+      {
+        label: 'Wolf4SDL engine',
+        url: 'https://github.com/midzer/wolf4sdl',
+        kind: 'engine',
+      },
+    ],
+    localLaunch: {
+      engine: 'Wolf4SDL o ECWolf',
+      assetHint: '*.wl6 o archivos shareware compatibles',
+      commandHint: 'ecwolf /ruta/a/carpeta-wolf3d',
+    },
     summary:
       'A browser-oriented source release exists, making this a practical early adapter.',
     legalBoundary:
@@ -58,6 +115,19 @@ export const games: GameEntry[] = [
     engineLicense: 'GPL-3.0',
     sourceUrl: 'https://github.com/SimHacker/micropolis',
     runnerPath: 'runners/micropolis/index.html',
+    runMode: 'web-included',
+    downloadLinks: [
+      {
+        label: 'Micropolis source GPL',
+        url: 'https://github.com/SimHacker/micropolis',
+        kind: 'source',
+      },
+      {
+        label: 'MicropolisCore WebAssembly',
+        url: 'https://github.com/SimHacker/MicropolisCore',
+        kind: 'engine',
+      },
+    ],
     summary:
       'The cleanest legal fit: the SimCity-derived code was released as Micropolis under GPL.',
     legalBoundary:
@@ -74,6 +144,29 @@ export const games: GameEntry[] = [
     runtimeStatus: 'research',
     engineLicense: 'GPL engine releases',
     sourceUrl: 'https://github.com/id-Software',
+    runMode: 'local-bridge',
+    downloadLinks: [
+      {
+        label: 'id Software source releases',
+        url: 'https://github.com/id-Software',
+        kind: 'source',
+      },
+      {
+        label: 'ioquake3 engine',
+        url: 'https://ioquake3.org/get-it/',
+        kind: 'engine',
+      },
+      {
+        label: 'vkQuake engine',
+        url: 'https://github.com/Novum/vkQuake',
+        kind: 'engine',
+      },
+    ],
+    localLaunch: {
+      engine: 'vkQuake, QuakeSpasm, Yamagi Quake II o ioquake3',
+      assetHint: 'pak0.pak, pak1.pak, baseq2/*.pak o baseq3/*.pk3',
+      commandHint: 'vkquake -basedir /ruta/a/quake',
+    },
     summary:
       'Great preservation target, but the engines and asset layouts differ substantially per game.',
     legalBoundary:
@@ -91,6 +184,24 @@ export const games: GameEntry[] = [
     engineLicense: 'GPL code drops and community engines',
     sourceUrl:
       'https://www.ea.com/games/command-and-conquer/command-and-conquer-remastered/news/steam-workshop-support',
+    runMode: 'local-bridge',
+    downloadLinks: [
+      {
+        label: 'EA code release notes',
+        url: 'https://www.ea.com/games/command-and-conquer/command-and-conquer-remastered/news/steam-workshop-support',
+        kind: 'source',
+      },
+      {
+        label: 'OpenRA engine',
+        url: 'https://www.openra.net/download/',
+        kind: 'engine',
+      },
+    ],
+    localLaunch: {
+      engine: 'OpenRA',
+      assetHint: 'mix archives, mapas y reglas',
+      commandHint: 'openra --mod ra',
+    },
     summary:
       'Promising, but web execution likely needs an OpenRA-style path or a remote runtime.',
     legalBoundary:
@@ -107,6 +218,19 @@ export const games: GameEntry[] = [
     runtimeStatus: 'research',
     engineLicense: 'Source release / community ports',
     sourceUrl: 'https://github.com/HomeworldSDL/HomeworldSDL',
+    runMode: 'local-bridge',
+    downloadLinks: [
+      {
+        label: 'HomeworldSDL',
+        url: 'https://github.com/HomeworldSDL/HomeworldSDL',
+        kind: 'source',
+      },
+    ],
+    localLaunch: {
+      engine: 'HomeworldSDL',
+      assetHint: 'Homeworld.big de una copia legal',
+      commandHint: 'homeworld-sdl -datapath /ruta/a/homeworld',
+    },
     summary:
       'There is a browser-oriented SDL path, but it expects original purchased data.',
     legalBoundary:
@@ -123,6 +247,24 @@ export const games: GameEntry[] = [
     runtimeStatus: 'adapter',
     engineLicense: 'Historical source publication',
     sourceUrl: 'https://github.com/jmechner/Prince-of-Persia-Apple-II',
+    runMode: 'local-bridge',
+    downloadLinks: [
+      {
+        label: 'Codigo Apple II original',
+        url: 'https://github.com/jmechner/Prince-of-Persia-Apple-II',
+        kind: 'source',
+      },
+      {
+        label: 'SDLPoP engine',
+        url: 'https://github.com/NagyD/SDLPoP',
+        kind: 'engine',
+      },
+    ],
+    localLaunch: {
+      engine: 'SDLPoP',
+      assetHint: 'carpeta de datos compatible con SDLPoP',
+      commandHint: 'prince /ruta/a/sdlpop',
+    },
     summary:
       'Excellent educational entry. A practical browser runner should use a modern reimplementation such as SDLPoP.',
     legalBoundary:
@@ -139,6 +281,29 @@ export const games: GameEntry[] = [
     runtimeStatus: 'adapter',
     engineLicense: 'GPL Aleph One engine',
     sourceUrl: 'https://alephone.lhowon.org/',
+    runMode: 'local-bridge',
+    downloadLinks: [
+      {
+        label: 'Aleph One engine',
+        url: 'https://alephone.lhowon.org/',
+        kind: 'engine',
+      },
+      {
+        label: 'Escenarios Marathon',
+        url: 'https://alephone.lhowon.org/scenarios.html',
+        kind: 'free-data',
+      },
+      {
+        label: 'Codigo Aleph One',
+        url: 'https://github.com/Aleph-One-Marathon/alephone',
+        kind: 'source',
+      },
+    ],
+    localLaunch: {
+      engine: 'Aleph One',
+      assetHint: 'carpeta de escenario Marathon',
+      commandHint: 'alephone /ruta/a/Marathon',
+    },
     summary:
       'Aleph One keeps the trilogy playable and is a strong preservation candidate.',
     legalBoundary:
@@ -155,6 +320,19 @@ export const games: GameEntry[] = [
     runtimeStatus: 'adapter',
     engineLicense: 'GPL engine/source-port ecosystem',
     sourceUrl: 'https://www.eduke32.com/',
+    runMode: 'local-bridge',
+    downloadLinks: [
+      {
+        label: 'EDuke32 engine',
+        url: 'https://www.eduke32.com/',
+        kind: 'engine',
+      },
+    ],
+    localLaunch: {
+      engine: 'EDuke32',
+      assetHint: 'DUKE3D.GRP de una copia legal',
+      commandHint: 'eduke32 -j/ruta/a/duke3d',
+    },
     summary:
       'EDuke32 is the practical modern target, with the original GRP supplied by the user.',
     legalBoundary:

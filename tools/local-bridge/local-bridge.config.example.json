@@ -1,0 +1,20 @@
+{
+  "port": 45217,
+  "games": {
+    "doom": {
+      "label": "Doom / Freedoom",
+      "command": "/Applications/GZDoom.app/Contents/MacOS/gzdoom",
+      "args": ["-iwad", "/Users/tuusuario/Games/Freedoom/freedoom2.wad"]
+    },
+    "marathon": {
+      "label": "Marathon",
+      "command": "/Applications/AlephOne.app/Contents/MacOS/AlephOne",
+      "args": ["/Users/tuusuario/Games/Marathon"]
+    },
+    "duke3d": {
+      "label": "Duke Nukem 3D",
+      "command": "/Applications/EDuke32.app/Contents/MacOS/eduke32",
+      "args": ["-j/Users/tuusuario/Games/Duke3D"]
+    }
+  }
+}

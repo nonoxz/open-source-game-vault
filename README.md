@@ -25,11 +25,64 @@ It is intentionally legal-first:
 
 - Game catalog for Wolfenstein 3D, Doom/Freedoom, Quake I/II/III, Micropolis, Command & Conquer/Red Alert, Homeworld, Prince of Persia, Marathon, and Duke Nukem 3D.
 - Local asset vault with upload, file counts, sizes, and delete actions.
+- Legal download links per game when there is a clean source, engine, or free-data target.
+- Optional local bridge so the web launcher can open native engines installed on your computer.
 - Legal and technical notes for each game.
 - Sandboxed runner system.
 - A built-in Micropolis-style planning sandbox so the launcher has one playable local runner today.
 
 The Micropolis sandbox is a proof of the runner model. It is not the full official Micropolis engine yet.
+
+## How Playing Works
+
+There are two execution modes.
+
+### Web Mode
+
+This is what GitHub Pages can do by itself:
+
+1. Pick a game.
+2. Use **Descargas legales** when a free data package or engine page exists.
+3. Use **Subir archivos** or **Subir carpeta** to copy files into the browser vault.
+4. Press **Jugar** when the game has a web runner included.
+
+Today, Micropolis has a built-in web runner. Other games keep the uploaded files ready while a real WebAssembly runner is connected.
+
+### Local Bridge Mode
+
+This mode lets the website open engines installed on your computer.
+
+The browser cannot execute `/Applications/GZDoom.app` or read `/Users/.../Games` directly. The bridge is a tiny local server that you run yourself. It only listens on `127.0.0.1`, and it only launches commands you wrote in its local config file.
+
+Start it with:
+
+```bash
+cp tools/local-bridge/local-bridge.config.example.json tools/local-bridge/local-bridge.config.json
+npm run bridge
+```
+
+Then edit:
+
+```text
+tools/local-bridge/local-bridge.config.json
+```
+
+Example for Doom/Freedoom on macOS:
+
+```json
+{
+  "port": 45217,
+  "games": {
+    "doom": {
+      "label": "Doom / Freedoom",
+      "command": "/Applications/GZDoom.app/Contents/MacOS/gzdoom",
+      "args": ["-iwad", "/Users/tuusuario/Games/Freedoom/freedoom2.wad"]
+    }
+  }
+}
+```
+
+After the bridge is running, refresh the website. If the selected game is configured, the main button changes to **Abrir local**.
 
 ## Para Personas Que No Saben Compilar
 
@@ -76,6 +129,8 @@ Some games need original files that this project cannot legally include. Example
 - Homeworld: `Homeworld.big`.
 
 Use the **Subir archivos** button in the app. Files stay in your browser storage.
+
+If a game needs a whole folder, use **Subir carpeta**. The website copies the selected files into browser storage; it does not keep a permanent path to your disk.
 
 ## Add A Real Runner
 
