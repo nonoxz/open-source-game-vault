@@ -68,8 +68,8 @@ export const games: GameEntry[] = [
       'Best first real target. The launcher can use free Freedoom data or user-provided commercial WAD files.',
     legalBoundary:
       'The original engine source is available, but commercial WAD data is not bundled here.',
-    requiredAssets: ['freedoom2.wad o doom.wad', 'configuracion/partidas opcionales'],
-    acceptedExtensions: ['.wad'],
+    requiredAssets: ['freedoom-0.13.0.zip o freedoom2.wad', 'doom.wad si tienes una copia legal'],
+    acceptedExtensions: ['.zip', '.wad'],
     nextStep: 'Connect a Chocolate Doom or wasm-doom build to the runner slot.',
   },
   {
