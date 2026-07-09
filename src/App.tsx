@@ -46,6 +46,12 @@ type SetupLink = {
   detail: string
 }
 
+type LaunchFeedback = {
+  title: string
+  body: string
+  detail: string
+}
+
 const statusLabel: Record<RuntimeStatus, string> = {
   ready: 'Runner incluido',
   adapter: 'Adaptador preparado',
@@ -161,6 +167,7 @@ function App() {
   const [activeId, setActiveId] = useState(defaultGameId)
   const [assets, setAssets] = useState<StoredAsset[]>([])
   const [launchTick, setLaunchTick] = useState(0)
+  const [launchFeedback, setLaunchFeedback] = useState<LaunchFeedback | null>(null)
   const [notice, setNotice] = useState('Vault listo. Selecciona un juego para revisar su runner.')
   const [bridge, setBridge] = useState<BridgeState>({
     online: false,
@@ -185,6 +192,10 @@ function App() {
   useEffect(() => {
     checkBridge()
   }, [])
+
+  useEffect(() => {
+    setLaunchFeedback(null)
+  }, [activeId])
 
   async function checkBridge() {
     try {
@@ -217,27 +228,41 @@ function App() {
     if (!files.length) return
 
     await saveAssets(activeGame.id, files)
+    setLaunchFeedback(null)
     await refreshAssets(`${files.length} archivo(s) guardado(s) para ${activeGame.title}.`)
   }
 
   async function handleDelete(assetId: string) {
     await deleteAsset(assetId)
+    setLaunchFeedback(null)
     await refreshAssets('Archivo removido del vault local.')
   }
 
   async function handleLaunch() {
     setLaunchTick((value) => value + 1)
     if (activeGame.runnerPath) {
+      setLaunchFeedback(null)
       setNotice(`Ejecutando runner local de ${activeGame.title}.`)
       return
     }
 
     if (!bridge.online) {
       if (matchedAssets.length > 0) {
+        setLaunchFeedback({
+          title: 'Archivos listos',
+          body: `Tus archivos de ${activeGame.title} ya estan guardados en el navegador.`,
+          detail:
+            'Todavia falta conectar el motor web de este juego para arrancarlo aqui. No tienes que volver a subir los archivos.',
+        })
         setNotice(
           `${activeGame.title} tiene archivos guardados. Falta conectar el motor web para que Jugar lo arranque dentro del navegador.`,
         )
       } else {
+        setLaunchFeedback({
+          title: 'Faltan archivos',
+          body: `Primero sube los archivos necesarios para ${activeGame.title}.`,
+          detail: 'Cuando el vault detecte archivos compatibles, el boton Jugar usara esos archivos.',
+        })
         setNotice(`Primero sube los archivos de ${activeGame.title}. Despues aparecera el flujo de juego.`)
       }
       return
@@ -251,8 +276,14 @@ function App() {
       })
       const data = (await response.json()) as { message?: string }
       if (!response.ok) throw new Error(data.message ?? 'No se pudo abrir el juego local.')
+      setLaunchFeedback(null)
       setNotice(data.message ?? `Abriendo ${activeGame.title} con el puente local.`)
     } catch (error) {
+      setLaunchFeedback({
+        title: 'No se pudo abrir',
+        body: 'El sitio encontro el puente local, pero el motor no respondio.',
+        detail: error instanceof Error ? error.message : 'Revisa la configuracion local del motor.',
+      })
       setNotice(error instanceof Error ? error.message : 'No se pudo abrir el juego local.')
     }
   }
@@ -332,6 +363,7 @@ function App() {
           game={activeGame}
           assets={matchedAssets}
           bridgeCanLaunch={bridgeCanLaunch}
+          feedback={launchFeedback}
           onLaunch={handleLaunch}
           onUpload={handleUpload}
           launchTick={launchTick}
@@ -392,6 +424,7 @@ function Runner({
   game,
   assets,
   bridgeCanLaunch,
+  feedback,
   onLaunch,
   onUpload,
   launchTick,
@@ -399,6 +432,7 @@ function Runner({
   game: GameEntry
   assets: StoredAsset[]
   bridgeCanLaunch: boolean
+  feedback: LaunchFeedback | null
   onLaunch: () => void
   onUpload: (event: ChangeEvent<HTMLInputElement>) => void
   launchTick: number
@@ -421,19 +455,23 @@ function Runner({
       <div className="runner-grid" aria-hidden="true"></div>
       <div className="runner-message setup-message">
         <HardDrive size={34} aria-hidden="true" />
-        <h3>{bridgeCanLaunch ? 'Listo para abrir localmente' : 'Preparar juego'}</h3>
-        <p>{statusCopy[game.runtimeStatus]}</p>
+        <h3>{feedback?.title ?? (bridgeCanLaunch ? 'Listo para abrir localmente' : 'Preparar juego')}</h3>
+        <p>{feedback?.body ?? statusCopy[game.runtimeStatus]}</p>
         <SetupActions
           game={game}
           hasAssets={assets.length > 0}
           onLaunch={onLaunch}
           onUpload={onUpload}
         />
-        <ol className="setup-instructions">
-          {setupStepsFor(game, bridgeCanLaunch, assets.length > 0).map((step) => (
-            <li key={step}>{step}</li>
-          ))}
-        </ol>
+        {feedback ? (
+          <div className="play-feedback">{feedback.detail}</div>
+        ) : (
+          <ol className="setup-instructions">
+            {setupStepsFor(game, bridgeCanLaunch, assets.length > 0).map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+        )}
         <code>{assets.length ? `${assets.length} archivo(s) compatible(s)` : 'sin archivos locales aun'}</code>
         <small className="legal-note">
           El sitio solo descarga codigo, motores o datos libres; si el juego exige archivos comerciales, debes

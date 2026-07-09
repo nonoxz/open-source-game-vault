@@ -526,6 +526,19 @@
   font-weight: 900;
 }
 
+.play-feedback {
+  width: min(100%, 560px);
+  margin-top: 16px;
+  padding: 14px 16px;
+  color: #eee7d8;
+  border: 1px solid rgba(109, 215, 200, 0.24);
+  border-radius: 8px;
+  background: rgba(109, 215, 200, 0.08);
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: left;
+}
+
 .legal-note {
   max-width: 540px;
   margin-top: 10px;
