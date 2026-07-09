@@ -4,6 +4,12 @@ Browser launcher for classic open-source game engines, built by [nonoxz](https:/
 
 ![Open Source Game Vault screenshot](docs/screenshot.png)
 
+## Game Catalog Preview
+
+These are original visual badges for the launcher entries. They are not copied game screenshots or commercial artwork.
+
+![Open Source Game Vault game catalog preview](docs/game-catalog.svg)
+
 ## What This Is
 
 Open Source Game Vault is a small web app for organizing and running classic game engines whose source code has been released.

@@ -119,7 +119,7 @@
 
 .game-row {
   display: grid;
-  grid-template-columns: 10px 1fr;
+  grid-template-columns: 34px 1fr;
   gap: 11px;
   width: 100%;
   min-height: 62px;
@@ -153,39 +153,41 @@
   font-size: 12px;
 }
 
-.status-dot {
-  width: 8px;
-  height: 8px;
-  margin-top: 6px;
-  border-radius: 999px;
-  background: #8d8577;
+.game-icon,
+.feature-icon {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(238, 231, 216, 0.12);
+  border-radius: 8px;
+  background: rgba(238, 231, 216, 0.045);
 }
 
-.status-dot.ready,
+.game-icon {
+  width: 34px;
+  height: 34px;
+}
+
+.feature-icon {
+  width: 44px;
+  height: 44px;
+}
+
+.game-icon.ready,
+.feature-icon.ready,
 .status-badge.ready {
   color: #6dd7c8;
 }
 
-.status-dot.ready {
-  background: #6dd7c8;
-}
-
-.status-dot.adapter,
+.game-icon.adapter,
+.feature-icon.adapter,
 .status-badge.adapter {
   color: #e2b15f;
 }
 
-.status-dot.adapter {
-  background: #e2b15f;
-}
-
-.status-dot.research,
+.game-icon.research,
+.feature-icon.research,
 .status-badge.research {
   color: #b7acd7;
-}
-
-.status-dot.research {
-  background: #b7acd7;
 }
 
 .runner-stage {
@@ -407,11 +409,18 @@
   padding: 16px;
 }
 
+.status-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
 .status-badge {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  margin-bottom: 16px;
   font-size: 12px;
   font-weight: 700;
 }

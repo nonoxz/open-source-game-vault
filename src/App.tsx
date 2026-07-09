@@ -2,16 +2,26 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ChangeEvent, ReactNode } from 'react'
 import {
   Archive,
+  Building2,
   CheckCircle2,
+  Crosshair,
   ExternalLink,
   FileUp,
+  Flame,
   FlaskConical,
   Gamepad2,
   HardDrive,
+  Landmark,
+  Orbit,
   Play,
+  RadioTower,
+  Rocket,
   ShieldCheck,
+  Swords,
+  Target,
   Trash2,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import './App.css'
 import { defaultGameId, games, type GameEntry, type RuntimeStatus } from './data/games'
 import { deleteAsset, formatBytes, listAssets, saveAssets, type StoredAsset } from './lib/assetStore'
@@ -26,6 +36,18 @@ const statusCopy: Record<RuntimeStatus, string> = {
   ready: 'Este juego tiene un runner local en el sitio.',
   adapter: 'El sitio ya modela assets y permisos; falta enchufar el motor WASM.',
   research: 'Conviene validar motor, assets y rendimiento antes de prometer ejecucion web.',
+}
+
+const gameIcons: Record<string, LucideIcon> = {
+  doom: Flame,
+  wolf3d: Crosshair,
+  micropolis: Building2,
+  quake: Orbit,
+  cnc: RadioTower,
+  homeworld: Rocket,
+  pop: Swords,
+  marathon: Landmark,
+  duke3d: Target,
 }
 
 function byGameId(assets: StoredAsset[], gameId: string) {
@@ -110,6 +132,7 @@ function App() {
         <nav className="game-list">
           {games.map((game) => {
             const gameAssets = byGameId(assets, game.id)
+            const GameIcon = gameIcons[game.id] ?? Gamepad2
             return (
               <button
                 className={game.id === activeGame.id ? 'game-row active' : 'game-row'}
@@ -117,7 +140,9 @@ function App() {
                 onClick={() => setActiveId(game.id)}
                 type="button"
               >
-                <span className={`status-dot ${game.runtimeStatus}`} aria-hidden="true"></span>
+                <span className={`game-icon ${game.runtimeStatus}`} aria-hidden="true">
+                  <GameIcon size={18} />
+                </span>
                 <span>
                   <strong>{game.title}</strong>
                   <small>
@@ -259,11 +284,18 @@ function AssetList({
 }
 
 function StatusCard({ game, matchedCount }: { game: GameEntry; matchedCount: number }) {
+  const GameIcon = gameIcons[game.id] ?? Gamepad2
+
   return (
     <section className="status-card">
-      <div className={`status-badge ${game.runtimeStatus}`}>
-        <CheckCircle2 size={16} aria-hidden="true" />
-        {statusLabel[game.runtimeStatus]}
+      <div className="status-card-head">
+        <div className={`feature-icon ${game.runtimeStatus}`} aria-hidden="true">
+          <GameIcon size={22} />
+        </div>
+        <div className={`status-badge ${game.runtimeStatus}`}>
+          <CheckCircle2 size={16} aria-hidden="true" />
+          {statusLabel[game.runtimeStatus]}
+        </div>
       </div>
       <h3>{game.family}</h3>
       <p>{game.summary}</p>
