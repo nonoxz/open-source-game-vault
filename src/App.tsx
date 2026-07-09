@@ -50,6 +50,18 @@ const gameIcons: Record<string, LucideIcon> = {
   duke3d: Target,
 }
 
+const gameCoverLabels: Record<string, string> = {
+  doom: 'DOOM',
+  wolf3d: 'WOLF',
+  micropolis: 'CITY',
+  quake: 'QUAKE',
+  cnc: 'C&C',
+  homeworld: 'HOME',
+  pop: 'PRINCE',
+  marathon: 'MTHON',
+  duke3d: 'DUKE',
+}
+
 function byGameId(assets: StoredAsset[], gameId: string) {
   return assets.filter((asset) => asset.gameId === gameId)
 }
@@ -140,8 +152,9 @@ function App() {
                 onClick={() => setActiveId(game.id)}
                 type="button"
               >
-                <span className={`game-icon ${game.runtimeStatus}`} aria-hidden="true">
+                <span className={`game-cover ${game.id} ${game.runtimeStatus}`} aria-hidden="true">
                   <GameIcon size={18} />
+                  <em>{gameCoverLabels[game.id] ?? game.title}</em>
                 </span>
                 <span>
                   <strong>{game.title}</strong>
